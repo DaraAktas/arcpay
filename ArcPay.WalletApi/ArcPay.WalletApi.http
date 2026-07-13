@@ -1,0 +1,6 @@
+@ArcPay.WalletApi_HostAddress = http://localhost:5209
+
+GET {{ArcPay.WalletApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

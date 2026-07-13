@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  arcpay-postgres:
+    image: postgres:18-alpine
+    container_name: arcpay-db-server
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Password123!
+    ports:
+      - "5434:5432"
+    volumes:
+      - arcpay_pgdata:/var/lib/postgresql
+
+volumes:
+  arcpay_pgdata:
