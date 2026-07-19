@@ -18,7 +18,7 @@ public class WalletDbContext : DbContext
             .HasOne(t => t.SenderWallet)
             .WithMany(w => w.SentTransactions)
             .HasForeignKey(t => t.SenderWalletId)
-            .OnDelete(DeleteBehavior.Restrict); 
+            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Transaction>()
             .HasOne(t => t.ReceiverWallet)

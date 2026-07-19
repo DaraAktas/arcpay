@@ -770,7 +770,9 @@ bir sonrakine geçilmez.
 
 **İlerleme:** Faz 0, 2026-07-19 tarihinde tamamlandı. Solution uyarısız derleniyor; üç
 Postgres container'ı sağlıklı ve Gateway, CustomerApi ile WalletApi health uçlarını doğru
-yönlendiriyor.
+yönlendiriyor. Faz 1 aynı gün tamamlandı: veritabanı sequence'i `ARC-1000000001` üretti;
+Gateway üzerinden kayıt → giriş → JWT → korumalı Customer ve Wallet uçları kabul testi
+geçti. JWT anahtarı yalnızca ortak .NET user-secrets deposunda tutuluyor.
 
 **Toplam ~6.5 hafta**, 1-2 aylık pencereye tampon bırakarak oturuyor. (DDD katmanları Faz
 3'e ~2-3 gün ekledi.)
@@ -781,7 +783,10 @@ yönlendiriyor.
 
 ---
 
-## 17. Mevcut Repoda Düzeltilecek Hatalar (Faz 0)
+## 17. Faz 0'da Düzeltilen Repo Hataları
+
+Aşağıdaki yedi başlangıç sorunu Faz 0 commit'inde giderildi; liste, düzeltmelerin neden
+gerekli olduğunun tarihsel kaydı olarak korunuyor.
 
 1. **Gateway route config'i bozuk.** `appsettings.json` içinde `wallet-route` altında aynı
    `"Path"` anahtarı iki kez yazılmış. .NET'in JSON config parser'ı duplicate key'de

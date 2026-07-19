@@ -1,6 +1,27 @@
-@ArcPay.CustomerApi_HostAddress = http://localhost:5083
+@Gateway_HostAddress = http://localhost:5000
+@Token = paste-login-access-token-here
 
-GET {{ArcPay.CustomerApi_HostAddress}}/weatherforecast/
-Accept: application/json
+POST {{Gateway_HostAddress}}/api/customer/register
+Content-Type: application/json
+
+{
+  "fullName": "Dara Aktas",
+  "email": "dara@example.com",
+  "password": "ArcPayTest123!"
+}
 
 ###
+
+POST {{Gateway_HostAddress}}/api/customer/login
+Content-Type: application/json
+
+{
+  "email": "dara@example.com",
+  "password": "ArcPayTest123!"
+}
+
+###
+
+GET {{Gateway_HostAddress}}/api/customer/me
+Authorization: Bearer {{Token}}
+Accept: application/json

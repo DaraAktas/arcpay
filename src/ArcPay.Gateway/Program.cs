@@ -1,7 +1,12 @@
+using ArcPay.Shared.Errors;
+using ArcPay.Shared.Security;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+builder.Services.AddArcPayJwtAuthentication(builder.Configuration);
+builder.Services.AddArcPayProblemDetails();
 
 builder.Services.AddCors(options =>
 {
@@ -13,7 +18,10 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
 app.UseCors("AllowReactApp");
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok(new
 {

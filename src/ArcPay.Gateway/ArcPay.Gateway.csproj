@@ -4,10 +4,15 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>ArcPay-Development-4ARC</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ArcPay.Shared\ArcPay.Shared.csproj" />
   </ItemGroup>
 
 </Project>
