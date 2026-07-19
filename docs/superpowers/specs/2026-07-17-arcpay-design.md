@@ -1,6 +1,6 @@
 # ArcPay — Teknik Tasarım Dokümanı
 
-**Tarih:** 2026-07-17 · **Durum:** Onaylandı · **Kaynak:** `ArcPay Geliştirme Dokümanı.pdf`
+**Tarih:** 2026-07-17 · **Son güncelleme:** 2026-07-19 · **Durum:** Onaylandı · **Kaynak:** `ArcPay Geliştirme Dokümanı.pdf`
 
 > Bu doküman projenin **tek doğru kaynağıdır**. Tasarım değişirse önce burası değişir,
 > kod sonra. Sunum sürümü bu dosyadan üretilir.
@@ -768,6 +768,10 @@ bir sonrakine geçilmez.
 | **5 — InvestmentApi** | Dış API + anahtar + cache · ACL'ler · `Portfolio` aggregate · saga + telafi · Gateway route · React piyasa/portföy | Hisse al, portföyde gör; Wallet'ı kapatıp iadeyi göster | ~1.5 hafta |
 | **6 — Cila** | Her şey Docker Compose'da · README · Serilog + correlation ID | `docker compose up` → sistem ayakta | ~3-4 gün |
 
+**İlerleme:** Faz 0, 2026-07-19 tarihinde tamamlandı. Solution uyarısız derleniyor; üç
+Postgres container'ı sağlıklı ve Gateway, CustomerApi ile WalletApi health uçlarını doğru
+yönlendiriyor.
+
 **Toplam ~6.5 hafta**, 1-2 aylık pencereye tampon bırakarak oturuyor. (DDD katmanları Faz
 3'e ~2-3 gün ekledi.)
 
@@ -821,10 +825,10 @@ bir sonrakine geçilmez.
 
 | Konu | Durum |
 |---|---|
-| .NET 10 SDK bu makinede kurulu değil | Faz 0'da kurulacak — ilk somut adım |
-| Docker kurulu ama çalışmıyor | Faz 0'da başlatılacak; Testcontainers için de gerekli |
-| Git kullanıcı adı/e-postası ayarlı değil | İlk commit'ten önce ayarlanacak |
-| `rhgod` repo sahibi — push yetkisi doğrulanmadı | Faz 0'da netleşecek; yetki yoksa fork gerekir |
+| .NET 10 SDK | Çözüldü — 10.0.302 kullanıcı alanına kuruldu, `global.json` ile sabitlendi |
+| Docker Desktop | Çözüldü — kuruldu; üç Postgres container'ı sağlıklı çalışıyor |
+| Git kullanıcı adı/e-postası | Çözüldü — repo-local `Fikret Dara Aktaş <daraaktas11@gmail.com>` |
+| Repo sahipliği | Çözüldü — private `DaraAktas/arcpay`; eski repo `upstream` olarak korunuyor |
 | Dış borsa API'si seçilmedi, anahtar alınmadı | Faz 5 başlamadan halledilecek |
 | Saga telafisi başarısız olursa para askıda kalır | Kabul edildi; `FailedCompensation` + ERROR log ile görünür kılınır |
 | Pesimistik kilit yüksek yük altında darboğaz olabilir | Bu ölçekte sorun değil; olursa Bölüm 11'deki iyimser alternatife geçilir |

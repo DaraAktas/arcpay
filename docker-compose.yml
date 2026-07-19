@@ -1,16 +1,56 @@
-version: '3.8'
-
 services:
-  arcpay-postgres:
+  customer-db:
     image: postgres:18-alpine
-    container_name: arcpay-db-server
+    container_name: arcpay-customer-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: Password123!
+      POSTGRES_DB: ArcPay_CustomerDb
     ports:
       - "5434:5432"
     volumes:
-      - arcpay_pgdata:/var/lib/postgresql
+      - customer_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ArcPay_CustomerDb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  wallet-db:
+    image: postgres:18-alpine
+    container_name: arcpay-wallet-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Password123!
+      POSTGRES_DB: ArcPay_WalletDb
+    ports:
+      - "5435:5432"
+    volumes:
+      - wallet_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ArcPay_WalletDb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  investment-db:
+    image: postgres:18-alpine
+    container_name: arcpay-investment-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Password123!
+      POSTGRES_DB: ArcPay_InvestmentDb
+    ports:
+      - "5436:5432"
+    volumes:
+      - investment_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ArcPay_InvestmentDb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
-  arcpay_pgdata:
+  customer_pgdata:
+  wallet_pgdata:
+  investment_pgdata:
