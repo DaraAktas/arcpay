@@ -1,0 +1,77 @@
+import type {
+  AuthResponse,
+  Customer,
+  LoginRequest,
+  ProblemDetails,
+  RegisterRequest,
+} from '../types/api'
+
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000').replace(
+  /\/$/,
+  '',
+)
+
+export class ApiError extends Error {
+  readonly status: number
+  readonly problem: ProblemDetails
+
+  constructor(status: number, problem: ProblemDetails) {
+    super(problem.title ?? 'İstek tamamlanamadı.')
+    this.name = 'ApiError'
+    this.status = status
+    this.problem = problem
+  }
+}
+
+async function request<T>(
+  path: string,
+  options: RequestInit = {},
+  accessToken?: string,
+): Promise<T> {
+  const headers = new Headers(options.headers)
+  headers.set('Accept', 'application/json')
+
+  if (options.body) {
+    headers.set('Content-Type', 'application/json')
+  }
+
+  if (accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`)
+  }
+
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers })
+  } catch {
+    throw new ApiError(0, {
+      title: 'ArcPay servislerine ulaşılamıyor. Lütfen bağlantınızı kontrol edin.',
+    })
+  }
+
+  if (!response.ok) {
+    const contentType = response.headers.get('content-type') ?? ''
+    const problem = contentType.includes('json')
+      ? ((await response.json()) as ProblemDetails)
+      : { title: 'İstek tamamlanamadı.' }
+    throw new ApiError(response.status, problem)
+  }
+
+  return (await response.json()) as T
+}
+
+export const customerApi = {
+  register: (payload: RegisterRequest) =>
+    request<Customer>('/api/customer/register', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  login: (payload: LoginRequest) =>
+    request<AuthResponse>('/api/customer/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  me: (accessToken: string) =>
+    request<Customer>('/api/customer/me', { method: 'GET' }, accessToken),
+}

@@ -1,6 +1,6 @@
 # ArcPay — Teknik Tasarım Dokümanı
 
-**Tarih:** 2026-07-17 · **Son güncelleme:** 2026-07-19 · **Durum:** Onaylandı · **Kaynak:** `ArcPay Geliştirme Dokümanı.pdf`
+**Tarih:** 2026-07-17 · **Son güncelleme:** 2026-07-22 · **Durum:** Onaylandı · **Kaynak:** `ArcPay Geliştirme Dokümanı.pdf`
 
 > Bu doküman projenin **tek doğru kaynağıdır**. Tasarım değişirse önce burası değişir,
 > kod sonra. Sunum sürümü bu dosyadan üretilir.
@@ -23,7 +23,7 @@
 14. [Hata Yönetimi](#14-hata-yönetimi)
 15. [Test Stratejisi](#15-test-stratejisi)
 16. [Yol Haritası](#16-yol-haritası)
-17. [Mevcut Repoda Düzeltilecekler](#17-mevcut-repoda-düzeltilecek-hatalar-faz-0)
+17. [Faz 0'da Düzeltilen Repo Hataları](#17-faz-0da-düzeltilen-repo-hataları)
 18. [Karar Kaydı](#18-karar-kaydı)
 19. [Riskler ve Açık Konular](#19-bilinen-riskler-ve-açık-konular)
 
@@ -541,6 +541,13 @@ sequenceDiagram
 JWT imzalama anahtarı geliştirmede user-secrets'ta, üretimde ortam değişkeninde.
 **Anahtar repoya commit edilmez.**
 
+React istemcisi erişim anahtarını, son kullanma zamanını ve müşteri özetini yalnızca
+`sessionStorage` içinde tutar; parola hiçbir zaman saklanmaz. Sayfa yenilendiğinde önce
+son kullanma zamanı denetlenir, ardından `/api/customer/me` ile sunucu tarafında yeniden
+doğrulama yapılır. Süre dolduğunda veya doğrulama başarısız olduğunda oturum temizlenir.
+`localStorage` yerine sekme ömürlü saklama seçilmesi, paylaşılan cihazlarda kalıcı token
+bırakmamak içindir.
+
 ---
 
 ## 11. Para Transferi — PDF Bölüm 3 (ACID)
@@ -734,6 +741,8 @@ koşar. (Sonuç: testleri çalıştırmak için Docker şart.)
 |---|---|---|
 | Unit | `Domain/` — aggregate invariant'ları, `Money` aritmetiği | xUnit — hızlı, altyapısız |
 | Unit | `Application/`, `Services/` — iş mantığı | xUnit + sahte repository |
+| UI | React yönlendirme, form doğrulama ve oturum saklama | Vitest + Testing Library |
+| Uçtan uca | React kayıt → giriş → korumalı hesap; gerçek Gateway + CustomerApi + Postgres | Tarayıcı kabul testi |
 | Integration | Endpoint + gerçek Postgres; migration ve kısıtlar dahil | `WebApplicationFactory` + Testcontainers |
 | Eşzamanlılık | Çifte harcamanın imkânsızlığı | Testcontainers |
 
@@ -773,6 +782,11 @@ Postgres container'ı sağlıklı ve Gateway, CustomerApi ile WalletApi health u
 yönlendiriyor. Faz 1 aynı gün tamamlandı: veritabanı sequence'i `ARC-1000000001` üretti;
 Gateway üzerinden kayıt → giriş → JWT → korumalı Customer ve Wallet uçları kabul testi
 geçti. JWT anahtarı yalnızca ortak .NET user-secrets deposunda tutuluyor.
+Faz 2, 2026-07-22 tarihinde tamamlandı: `arcpay-fe` Vite + React + TypeScript ile kuruldu;
+kayıt, giriş, süre kontrollü `sessionStorage` oturumu, `/api/customer/me` ile yeniden
+doğrulama ve korumalı hesap ekranı eklendi. Sekiz frontend testi, lint ve üretim derlemesi
+geçti; gerçek tarayıcıda masaüstü ve mobil kayıt → giriş → yenileme → çıkış akışı
+doğrulandı.
 
 **Toplam ~6.5 hafta**, 1-2 aylık pencereye tampon bırakarak oturuyor. (DDD katmanları Faz
 3'e ~2-3 gün ekledi.)
