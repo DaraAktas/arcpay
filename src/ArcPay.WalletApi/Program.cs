@@ -1,6 +1,12 @@
-using ArcPay.WalletApi.Data;
 using ArcPay.Shared.Errors;
 using ArcPay.Shared.Security;
+using ArcPay.Shared.Validation;
+using ArcPay.WalletApi.Api.Validators;
+using ArcPay.WalletApi.Application.Abstractions;
+using ArcPay.WalletApi.Application.Wallets;
+using ArcPay.WalletApi.Domain.Wallets;
+using ArcPay.WalletApi.Infrastructure.Persistence;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,7 +14,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<WalletDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options => options.Filters.Add<FluentValidationActionFilter>());
+builder.Services.AddValidatorsFromAssemblyContaining<OpenWalletRequestValidator>();
+builder.Services.AddScoped<WalletRepository>();
+builder.Services.AddScoped<IWalletRepository>(provider => provider.GetRequiredService<WalletRepository>());
+builder.Services.AddScoped<IWalletUnitOfWork>(provider => provider.GetRequiredService<WalletRepository>());
+builder.Services.AddScoped<WalletService>();
 builder.Services.AddArcPayJwtAuthentication(builder.Configuration);
 builder.Services.AddArcPayProblemDetails();
 

@@ -22,6 +22,18 @@ export interface AuthResponse {
   customer: Customer
 }
 
+export interface Wallet {
+  id: number
+  customerNumber: string
+  balance: number
+  currency: string
+}
+
+export interface DepositResponse {
+  transactionRef: string
+  wallet: Wallet
+}
+
 export interface ProblemDetails {
   type?: string
   title?: string

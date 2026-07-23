@@ -4,6 +4,8 @@ import type {
   LoginRequest,
   ProblemDetails,
   RegisterRequest,
+  Wallet,
+  DepositResponse,
 } from '../types/api'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000').replace(
@@ -74,4 +76,23 @@ export const customerApi = {
 
   me: (accessToken: string) =>
     request<Customer>('/api/customer/me', { method: 'GET' }, accessToken),
+}
+
+export const walletApi = {
+  list: (accessToken: string) =>
+    request<Wallet[]>('/api/wallet', { method: 'GET' }, accessToken),
+
+  open: (currency: string, accessToken: string) =>
+    request<Wallet>(
+      '/api/wallet',
+      { method: 'POST', body: JSON.stringify({ currency }) },
+      accessToken,
+    ),
+
+  deposit: (currency: string, amount: number, transactionRef: string, accessToken: string) =>
+    request<DepositResponse>(
+      `/api/wallet/${encodeURIComponent(currency)}/deposit`,
+      { method: 'POST', body: JSON.stringify({ amount, transactionRef }) },
+      accessToken,
+    ),
 }

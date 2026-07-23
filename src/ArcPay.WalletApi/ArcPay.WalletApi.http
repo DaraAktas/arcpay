@@ -1,6 +1,28 @@
-@ArcPay.WalletApi_HostAddress = http://localhost:5209
+@Gateway = http://localhost:5000
+@Token = replace-with-access-token
 
-GET {{ArcPay.WalletApi_HostAddress}}/weatherforecast/
+### List wallets
+GET {{Gateway}}/api/wallet
+Authorization: Bearer {{Token}}
+
+### Open TRY wallet
+POST {{Gateway}}/api/wallet
+Authorization: Bearer {{Token}}
+Content-Type: application/json
+
+{
+  "currency": "TRY"
+}
+
+### Deposit with an idempotency reference
+POST {{Gateway}}/api/wallet/TRY/deposit
+Authorization: Bearer {{Token}}
+Content-Type: application/json
+
+{
+  "amount": 1250.50,
+  "transactionRef": "{{$guid}}"
+}
 Accept: application/json
 
 ###

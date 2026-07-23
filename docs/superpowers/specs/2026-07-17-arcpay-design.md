@@ -1,6 +1,6 @@
 # ArcPay — Teknik Tasarım Dokümanı
 
-**Tarih:** 2026-07-17 · **Son güncelleme:** 2026-07-22 · **Durum:** Onaylandı · **Kaynak:** `ArcPay Geliştirme Dokümanı.pdf`
+**Tarih:** 2026-07-17 · **Son güncelleme:** 2026-07-24 · **Durum:** Onaylandı · **Kaynak:** `ArcPay Geliştirme Dokümanı.pdf`
 
 > Bu doküman projenin **tek doğru kaynağıdır**. Tasarım değişirse önce burası değişir,
 > kod sonra. Sunum sürümü bu dosyadan üretilir.
@@ -787,6 +787,14 @@ kayıt, giriş, süre kontrollü `sessionStorage` oturumu, `/api/customer/me` il
 doğrulama ve korumalı hesap ekranı eklendi. Sekiz frontend testi, lint ve üretim derlemesi
 geçti; gerçek tarayıcıda masaüstü ve mobil kayıt → giriş → yenileme → çıkış akışı
 doğrulandı.
+Faz 3, 2026-07-24 tarihinde tamamlandı: Wallet context `Domain`, `Application`, `Api` ve
+`Infrastructure` katmanlarına ayrıldı; `Money`, `Currency` ve `CustomerNumber` value
+object'leri, `Wallet` aggregate'i, repository portu, cüzdan açma/listeleme ve atomik para
+yatırma akışı eklendi. Her para yatırma aynı PostgreSQL transaction'ında tek bir resmi
+`Transaction` kaydı üretiyor; aynı `TransactionRef` yeniden gönderildiğinde bakiye ikinci
+kez artmıyor. Yirmi üç domain testi ve dokuz frontend testi geçti. Gerçek Postgres'te
+unique/CHECK kısıtları; gerçek tarayıcıda giriş → TRY cüzdanı aç → ₺875,25 yatır → sayfayı
+yenile → bakiyeyi gör akışı, 390 px mobil görünüm dahil doğrulandı.
 
 **Toplam ~6.5 hafta**, 1-2 aylık pencereye tampon bırakarak oturuyor. (DDD katmanları Faz
 3'e ~2-3 gün ekledi.)
