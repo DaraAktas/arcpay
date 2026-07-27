@@ -3,6 +3,7 @@ using ArcPay.Shared.Security;
 using ArcPay.Shared.Validation;
 using ArcPay.WalletApi.Api.Validators;
 using ArcPay.WalletApi.Application.Abstractions;
+using ArcPay.WalletApi.Application.Transactions;
 using ArcPay.WalletApi.Application.Wallets;
 using ArcPay.WalletApi.Domain.Wallets;
 using ArcPay.WalletApi.Infrastructure.Persistence;
@@ -19,7 +20,9 @@ builder.Services.AddValidatorsFromAssemblyContaining<OpenWalletRequestValidator>
 builder.Services.AddScoped<WalletRepository>();
 builder.Services.AddScoped<IWalletRepository>(provider => provider.GetRequiredService<WalletRepository>());
 builder.Services.AddScoped<IWalletUnitOfWork>(provider => provider.GetRequiredService<WalletRepository>());
+builder.Services.AddScoped<ITransactionHistoryReader>(provider => provider.GetRequiredService<WalletRepository>());
 builder.Services.AddScoped<WalletService>();
+builder.Services.AddScoped<TransferService>();
 builder.Services.AddArcPayJwtAuthentication(builder.Configuration);
 builder.Services.AddArcPayProblemDetails();
 

@@ -45,4 +45,48 @@ public sealed class Transaction : BaseEntity
             UpdatedBy = "deposit"
         };
     }
+
+    public static Transaction RecordTransfer(
+        int senderWalletId,
+        int receiverWalletId,
+        Money amount,
+        Guid transactionReference,
+        CustomerNumber initiatedBy,
+        string? description)
+    {
+        if (senderWalletId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(senderWalletId));
+        }
+
+        if (receiverWalletId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(receiverWalletId));
+        }
+
+        if (senderWalletId == receiverWalletId)
+        {
+            throw new ArgumentException(WalletErrors.SelfTransfer.Description, nameof(receiverWalletId));
+        }
+
+        if (transactionReference == Guid.Empty)
+        {
+            throw new ArgumentException(WalletErrors.InvalidTransactionReference.Description, nameof(transactionReference));
+        }
+
+        var normalizedDescription = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+        return new Transaction
+        {
+            TransactionRef = transactionReference,
+            Type = TransactionType.Transfer,
+            SenderWalletId = senderWalletId,
+            ReceiverWalletId = receiverWalletId,
+            _amount = amount.Amount,
+            Currency = amount.Currency,
+            Status = TransactionStatus.Completed,
+            Description = normalizedDescription,
+            CreatedBy = initiatedBy.Value,
+            UpdatedBy = initiatedBy.Value
+        };
+    }
 }

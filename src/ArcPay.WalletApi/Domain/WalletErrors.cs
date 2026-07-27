@@ -30,4 +30,7 @@ public static class WalletErrors
 
     public static readonly Error TransactionReferenceConflict =
         new("wallet.transaction_reference_conflict", "Transaction reference was already used.", 409);
+
+    public static readonly Error SelfTransfer =
+        new("wallet.self_transfer", "Sender and receiver must be different customers.", 409);
 }

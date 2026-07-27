@@ -34,7 +34,7 @@ describe('ArcPay authentication flow', () => {
   it('logs in and opens the protected account page', async () => {
     const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
       const url = input.toString()
-      return Promise.resolve(url.endsWith('/api/wallet')
+      return Promise.resolve(url.endsWith('/api/wallet') || url.endsWith('/api/transaction')
         ? jsonResponse([])
         : jsonResponse({
             accessToken: 'valid.jwt.token',
@@ -97,7 +97,11 @@ describe('ArcPay authentication flow', () => {
       JSON.stringify({ accessToken: 'stored.token', expiresAt: '2099-01-01T00:00:00Z', customer }),
     )
     const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) =>
-      Promise.resolve(input.toString().endsWith('/api/wallet') ? jsonResponse([]) : jsonResponse(customer)),
+      Promise.resolve(
+        input.toString().endsWith('/api/wallet') || input.toString().endsWith('/api/transaction')
+          ? jsonResponse([])
+          : jsonResponse(customer),
+      ),
     )
     vi.stubGlobal('fetch', fetchMock)
 
@@ -126,6 +130,7 @@ describe('ArcPay authentication flow', () => {
     const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, options?: RequestInit) => {
       const url = input.toString()
       if (url.endsWith('/api/customer/me')) return Promise.resolve(jsonResponse(customer))
+      if (url.endsWith('/api/transaction')) return Promise.resolve(jsonResponse([]))
       if (url.endsWith('/api/wallet') && options?.method === 'GET') return Promise.resolve(jsonResponse([]))
       if (url.endsWith('/api/wallet') && options?.method === 'POST') return Promise.resolve(jsonResponse(wallet, 201))
       if (url.endsWith('/api/wallet/TRY/deposit')) {
@@ -158,5 +163,68 @@ describe('ArcPay authentication flow', () => {
       'http://localhost:5000/api/wallet/TRY/deposit',
       expect.objectContaining({ method: 'POST' }),
     )
+  })
+
+  it('transfers money and shows the completed movement', async () => {
+    sessionStorage.setItem(
+      'arcpay.session',
+      JSON.stringify({ accessToken: 'stored.token', expiresAt: '2099-01-01T00:00:00Z', customer }),
+    )
+    const wallet = { id: 1, customerNumber: customer.customerNumber, balance: 500, currency: 'TRY' }
+    let transferCompleted = false
+    const transfer = {
+      transactionRef: '22222222-2222-2222-2222-222222222222',
+      receiverCustomerNumber: 'ARC-1000000002',
+      amount: 125,
+      currency: 'TRY',
+      senderWallet: { ...wallet, balance: 375 },
+      createdAt: '2026-07-27T10:00:00Z',
+      isReplay: false,
+    }
+    const history = {
+      transactionRef: transfer.transactionRef,
+      type: 'Transfer',
+      direction: 'Outgoing',
+      amount: 125,
+      currency: 'TRY',
+      status: 'Completed',
+      counterpartyCustomerNumber: transfer.receiverCustomerNumber,
+      description: 'Yemek payı',
+      createdAt: transfer.createdAt,
+    }
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, options?: RequestInit) => {
+      const url = input.toString()
+      if (url.endsWith('/api/customer/me')) return Promise.resolve(jsonResponse(customer))
+      if (url.endsWith('/api/wallet')) return Promise.resolve(jsonResponse([wallet]))
+      if (url.endsWith('/api/transaction/transfer') && options?.method === 'POST') {
+        transferCompleted = true
+        return Promise.resolve(jsonResponse(transfer, 201))
+      }
+      if (url.endsWith('/api/transaction')) {
+        return Promise.resolve(jsonResponse(transferCompleted ? [history] : []))
+      }
+      throw new Error(`Unexpected request: ${url}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(
+      <MemoryRouter initialEntries={['/hesabim']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('₺500,00')).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Para gönder' }))
+    fireEvent.change(screen.getByLabelText('Alıcı müşteri numarası'), {
+      target: { value: 'ARC-1000000002' },
+    })
+    fireEvent.change(screen.getByLabelText('Tutar'), { target: { value: '125' } })
+    fireEvent.change(screen.getByLabelText(/Açıklama/), { target: { value: 'Yemek payı' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Transferi tamamla' }))
+
+    expect(await screen.findByText(/numaralı müşteriye/)).toHaveTextContent('₺125,00 gönderildi.')
+    expect(screen.getByText('Giden transfer')).toBeVisible()
+    expect(screen.getByText('ARC-1000000002')).toBeVisible()
+    expect(screen.getByText('-₺125,00')).toBeVisible()
   })
 })

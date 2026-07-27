@@ -34,6 +34,28 @@ export interface DepositResponse {
   wallet: Wallet
 }
 
+export interface TransferResponse {
+  transactionRef: string
+  receiverCustomerNumber: string
+  amount: number
+  currency: string
+  senderWallet: Wallet
+  createdAt: string
+  isReplay: boolean
+}
+
+export interface TransactionHistory {
+  transactionRef: string
+  type: 'Deposit' | 'Transfer' | string
+  direction: 'Incoming' | 'Outgoing'
+  amount: number
+  currency: string
+  status: 'Completed' | 'Pending' | 'Failed' | string
+  counterpartyCustomerNumber?: string | null
+  description?: string | null
+  createdAt: string
+}
+
 export interface ProblemDetails {
   type?: string
   title?: string
