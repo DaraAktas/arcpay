@@ -43,6 +43,18 @@ export function getErrorMessage(error: unknown): string {
     return 'Bu işlem için cüzdan bakiyesi yetersiz.'
   }
 
+  if (code === 'investment.purchase_compensated') {
+    return 'Portföy kaydı tamamlanamadı; tahsil edilen tutar cüzdanınıza otomatik olarak iade edildi.'
+  }
+
+  if (code === 'investment.compensation_failed') {
+    return 'İade otomatik tamamlanamadı. İşlem inceleme kuyruğuna alındı.'
+  }
+
+  if (code === 'investment.quote_unavailable') {
+    return 'Piyasa fiyatı şu anda alınamıyor. Lütfen kısa süre sonra yeniden deneyin.'
+  }
+
   const validationMessage = Object.values(error.problem.errors ?? {}).flat()[0]
   return validationMessage ?? error.message
 }

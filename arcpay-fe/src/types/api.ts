@@ -71,3 +71,36 @@ export interface ProblemDetails {
   correlationId?: string
   errors?: Record<string, string[]>
 }
+
+export interface MarketQuote {
+  symbol: string
+  name: string
+  price: number
+  currency: string
+  changePercent: number
+  asOf: string
+  source: string
+}
+
+export interface Holding {
+  symbol: string
+  quantity: number
+  averageCost: number
+  currency: string
+}
+
+export interface Portfolio {
+  customerNumber: string
+  holdings: Holding[]
+}
+
+export interface InvestmentPurchase {
+  purchaseRef: string
+  symbol: string
+  quantity: number
+  unitPrice: number
+  totalAmount: number
+  currency: string
+  status: string
+  isReplay: boolean
+}

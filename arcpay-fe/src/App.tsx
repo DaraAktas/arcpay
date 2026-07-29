@@ -4,6 +4,7 @@ import { ProtectedRoute } from './auth/ProtectedRoute'
 import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { InvestmentPage } from './pages/InvestmentPage'
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
         <Route path="/kayit" element={<RegisterPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/hesabim" element={<DashboardPage />} />
+          <Route path="/yatirimlar" element={<InvestmentPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/hesabim" replace />} />
       </Routes>

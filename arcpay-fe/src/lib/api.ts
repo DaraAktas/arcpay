@@ -9,6 +9,9 @@ import type {
   TransactionHistory,
   TransferResponse,
   RecipientLookup,
+  MarketQuote,
+  Portfolio,
+  InvestmentPurchase,
 } from '../types/api'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000').replace(
@@ -131,6 +134,29 @@ export const transactionApi = {
     {
       method: 'POST',
       body: JSON.stringify({ toCustomerNumber, amount, currency, transactionRef, description }),
+    },
+    accessToken,
+  ),
+}
+
+export const investmentApi = {
+  market: (accessToken: string) =>
+    request<MarketQuote[]>('/api/investment/market', { method: 'GET' }, accessToken),
+
+  portfolio: (accessToken: string) =>
+    request<Portfolio>('/api/investment/portfolio', { method: 'GET' }, accessToken),
+
+  purchase: (
+    symbol: string,
+    quantity: number,
+    purchaseRef: string,
+    simulatePortfolioFailure: boolean,
+    accessToken: string,
+  ) => request<InvestmentPurchase>(
+    '/api/investment/purchase',
+    {
+      method: 'POST',
+      body: JSON.stringify({ symbol, quantity, purchaseRef, simulatePortfolioFailure }),
     },
     accessToken,
   ),

@@ -6,5 +6,6 @@ public enum TransactionType
     Withdrawal,
     Transfer,
     InvestmentPurchase,
-    InvestmentSale
+    InvestmentSale,
+    InvestmentRefund
 }

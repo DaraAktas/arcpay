@@ -89,4 +89,61 @@ public sealed class Transaction : BaseEntity
             UpdatedBy = initiatedBy.Value
         };
     }
+
+    public static Transaction RecordInvestmentPurchase(
+        int senderWalletId,
+        Money amount,
+        Guid transactionReference,
+        CustomerNumber initiatedBy,
+        string? description) => RecordWalletMovement(
+            TransactionType.InvestmentPurchase,
+            senderWalletId,
+            null,
+            amount,
+            transactionReference,
+            initiatedBy,
+            description ?? "Investment purchase");
+
+    public static Transaction RecordInvestmentRefund(
+        int receiverWalletId,
+        Money amount,
+        Guid transactionReference,
+        CustomerNumber initiatedBy,
+        string? description) => RecordWalletMovement(
+            TransactionType.InvestmentRefund,
+            null,
+            receiverWalletId,
+            amount,
+            transactionReference,
+            initiatedBy,
+            description ?? "Investment compensation refund");
+
+    private static Transaction RecordWalletMovement(
+        TransactionType type,
+        int? senderWalletId,
+        int? receiverWalletId,
+        Money amount,
+        Guid transactionReference,
+        CustomerNumber initiatedBy,
+        string description)
+    {
+        if (senderWalletId is <= 0 || receiverWalletId is <= 0)
+            throw new ArgumentOutOfRangeException(nameof(senderWalletId));
+        if (transactionReference == Guid.Empty)
+            throw new ArgumentException(WalletErrors.InvalidTransactionReference.Description, nameof(transactionReference));
+
+        return new Transaction
+        {
+            TransactionRef = transactionReference,
+            Type = type,
+            SenderWalletId = senderWalletId,
+            ReceiverWalletId = receiverWalletId,
+            _amount = amount.Amount,
+            Currency = amount.Currency,
+            Status = TransactionStatus.Completed,
+            Description = description.Trim(),
+            CreatedBy = initiatedBy.Value,
+            UpdatedBy = initiatedBy.Value
+        };
+    }
 }

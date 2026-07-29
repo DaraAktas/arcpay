@@ -58,6 +58,11 @@ public sealed class WalletRepository(WalletDbContext dbContext) :
                 """)
             .SingleOrDefaultAsync(cancellationToken);
 
+    public Task<Wallet?> GetByIdForUpdateAsync(int walletId, CancellationToken cancellationToken) =>
+        dbContext.Wallets
+            .FromSqlInterpolated($"SELECT * FROM \"Wallets\" WHERE \"Id\" = {walletId} FOR UPDATE")
+            .SingleOrDefaultAsync(cancellationToken);
+
     public async Task<(Wallet First, Wallet Second)?> GetPairForUpdateAsync(
         int walletA,
         int walletB,

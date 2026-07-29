@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
@@ -289,5 +289,65 @@ describe('ArcPay authentication flow', () => {
 
     expect(await screen.findByText(/cüzdanınız kapatıldı/)).toBeVisible()
     expect(screen.getByText('0 aktif cüzdan')).toBeVisible()
+  })
+
+  it('purchases a market asset and shows it in the portfolio', async () => {
+    sessionStorage.setItem(
+      'arcpay.session',
+      JSON.stringify({ accessToken: 'stored.token', expiresAt: '2099-01-01T00:00:00Z', customer }),
+    )
+    const quote = { symbol: 'AAPL', name: 'Apple', price: 100, currency: 'USD', changePercent: 1.2, asOf: '2026-07-29T00:00:00Z', source: 'Demo' }
+    let purchased = false
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url = input.toString()
+      if (url.endsWith('/api/customer/me')) return Promise.resolve(jsonResponse(customer))
+      if (url.endsWith('/api/investment/market')) return Promise.resolve(jsonResponse([quote]))
+      if (url.endsWith('/api/investment/portfolio')) return Promise.resolve(jsonResponse({
+        customerNumber: customer.customerNumber,
+        holdings: purchased ? [{ symbol: 'AAPL', quantity: 2, averageCost: 100, currency: 'USD' }] : [],
+      }))
+      if (url.endsWith('/api/investment/purchase')) {
+        purchased = true
+        return Promise.resolve(jsonResponse({ purchaseRef: crypto.randomUUID(), symbol: 'AAPL', quantity: 2, unitPrice: 100, totalAmount: 200, currency: 'USD', status: 'Completed', isReplay: false }))
+      }
+      throw new Error(`Unexpected request: ${url}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<MemoryRouter initialEntries={['/yatirimlar']}><App /></MemoryRouter>)
+
+    const marketCard = (await screen.findByText('AAPL')).closest('article')!
+    fireEvent.click(within(marketCard).getByRole('button', { name: 'Satın al' }))
+    fireEvent.change(screen.getByLabelText('Adet'), { target: { value: '2' } })
+    fireEvent.click(screen.getByRole('dialog', { name: 'Varlık satın alın' }).querySelector('.primary-button')!)
+
+    expect(await screen.findByText(/2 AAPL/)).toBeVisible()
+    expect(screen.getByText('2 adet')).toBeVisible()
+  })
+
+  it('shows that a failed portfolio write was automatically refunded', async () => {
+    sessionStorage.setItem(
+      'arcpay.session',
+      JSON.stringify({ accessToken: 'stored.token', expiresAt: '2099-01-01T00:00:00Z', customer }),
+    )
+    const quote = { symbol: 'AAPL', name: 'Apple', price: 100, currency: 'USD', changePercent: 1.2, asOf: '2026-07-29T00:00:00Z', source: 'Demo' }
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url = input.toString()
+      if (url.endsWith('/api/customer/me')) return Promise.resolve(jsonResponse(customer))
+      if (url.endsWith('/api/investment/market')) return Promise.resolve(jsonResponse([quote]))
+      if (url.endsWith('/api/investment/portfolio')) return Promise.resolve(jsonResponse({ customerNumber: customer.customerNumber, holdings: [] }))
+      if (url.endsWith('/api/investment/purchase')) return Promise.resolve(jsonResponse({ title: 'Purchase refunded.', code: 'investment.purchase_compensated' }, 409))
+      throw new Error(`Unexpected request: ${url}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<MemoryRouter initialEntries={['/yatirimlar']}><App /></MemoryRouter>)
+
+    const marketCard = (await screen.findByText('AAPL')).closest('article')!
+    fireEvent.click(within(marketCard).getByRole('button', { name: 'Satın al' }))
+    fireEvent.click(screen.getByLabelText(/Telafi senaryosunu test et/))
+    fireEvent.click(screen.getByRole('dialog', { name: 'Varlık satın alın' }).querySelector('.primary-button')!)
+
+    expect(await screen.findByText(/otomatik olarak iade edildi/)).toBeVisible()
   })
 })

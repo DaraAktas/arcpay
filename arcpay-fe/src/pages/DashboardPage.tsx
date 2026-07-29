@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/auth-context'
 import { Brand } from '../components/Brand'
 import { ApiError, customerApi, transactionApi, walletApi } from '../lib/api'
@@ -217,6 +218,10 @@ export function DashboardPage() {
     <div className="dashboard-shell">
       <header className="dashboard-header">
         <Brand />
+        <nav className="main-nav" aria-label="Ana menü">
+          <Link className="is-active" to="/hesabim">Cüzdanlar</Link>
+          <Link to="/yatirimlar">Yatırımlar</Link>
+        </nav>
         <div className="header-actions">
           <span className="session-indicator"><i /> Güvenli oturum</span>
           <button className="text-button" type="button" onClick={logout}>Çıkış yap</button>
@@ -230,7 +235,7 @@ export function DashboardPage() {
             <h1>Merhaba, {customer.fullName.split(' ')[0]}.</h1>
             <p>Bakiyelerinizi yönetin, güvenli para gönderin ve tüm hareketlerinizi izleyin.</p>
           </div>
-          <div className="phase-badge"><span>✓</span> Faz 4 · ACID transfer</div>
+          <div className="phase-badge"><span>✓</span> Faz 5 · Investment saga</div>
         </section>
 
         {(pageError || notice) && (

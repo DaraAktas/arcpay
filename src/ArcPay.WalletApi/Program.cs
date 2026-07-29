@@ -22,6 +22,7 @@ builder.Services.AddScoped<IWalletRepository>(provider => provider.GetRequiredSe
 builder.Services.AddScoped<IWalletUnitOfWork>(provider => provider.GetRequiredService<WalletRepository>());
 builder.Services.AddScoped<ITransactionHistoryReader>(provider => provider.GetRequiredService<WalletRepository>());
 builder.Services.AddScoped<WalletService>();
+builder.Services.AddScoped<InvestmentPaymentService>();
 builder.Services.AddScoped<TransferService>();
 builder.Services.AddScoped<WalletDevelopmentSeeder>();
 builder.Services.AddArcPayJwtAuthentication(builder.Configuration);
