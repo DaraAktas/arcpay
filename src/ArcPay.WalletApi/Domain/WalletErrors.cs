@@ -33,4 +33,10 @@ public static class WalletErrors
 
     public static readonly Error SelfTransfer =
         new("wallet.self_transfer", "Sender and receiver must be different customers.", 409);
+
+    public static readonly Error BalanceMustBeZero =
+        new("wallet.balance_must_be_zero", "Wallet balance must be zero before it can be closed.", 409);
+
+    public static readonly Error AlreadyClosed =
+        new("wallet.already_closed", "Wallet is already closed.", 409);
 }

@@ -34,6 +34,16 @@ public sealed class CustomerController(CustomerService customerService) : Contro
     }
 
     [Authorize]
+    [HttpPost("resolve-recipient")]
+    public async Task<ActionResult<RecipientLookupResponse>> ResolveRecipient(
+        RecipientLookupRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await customerService.ResolveRecipientAsync(request.Identifier, cancellationToken);
+        return result.IsSuccess ? Ok(result.Value) : ToProblem(result.Error);
+    }
+
+    [Authorize]
     [HttpGet("me")]
     public async Task<ActionResult<CustomerResponse>> Me(CancellationToken cancellationToken)
     {

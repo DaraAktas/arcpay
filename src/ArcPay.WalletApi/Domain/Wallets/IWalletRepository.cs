@@ -8,6 +8,7 @@ public interface IWalletRepository
     Task AddAsync(Wallet wallet, CancellationToken cancellationToken);
     Task<IReadOnlyList<Wallet>> ListAsync(CustomerNumber owner, CancellationToken cancellationToken);
     Task<Wallet?> GetAsync(CustomerNumber owner, Currency currency, CancellationToken cancellationToken);
+    Task<Wallet?> GetAnyAsync(CustomerNumber owner, Currency currency, CancellationToken cancellationToken);
     Task<Wallet?> GetForUpdateAsync(CustomerNumber owner, Currency currency, CancellationToken cancellationToken);
     Task<(Wallet First, Wallet Second)?> GetPairForUpdateAsync(
         int walletA,

@@ -5,24 +5,42 @@ export function getErrorMessage(error: unknown): string {
     return 'Beklenmeyen bir hata oluştu. Lütfen yeniden deneyin.'
   }
 
-  if (error.problem.code === 'customer.invalid_credentials') {
+  const code = error.problem.code?.toLowerCase()
+
+  if (code === 'customer.invalid_credentials') {
     return 'E-posta adresi veya parola hatalı.'
   }
 
-  if (error.problem.code === 'customer.duplicate_email') {
+  if (code === 'customer.duplicateemail' || code === 'customer.duplicate_email') {
     return 'Bu e-posta adresiyle daha önce hesap oluşturulmuş.'
   }
 
-  if (error.problem.code === 'wallet.already_exists') {
+  if (code === 'customer.duplicatephone' || code === 'customer.duplicate_phone') {
+    return 'Bu telefon numarasıyla daha önce hesap oluşturulmuş.'
+  }
+
+  if (code === 'customer.notfound' || code === 'customer.not_found') {
+    return 'Bu müşteri numarası, e-posta veya telefonla eşleşen alıcı bulunamadı.'
+  }
+
+  if (code === 'wallet.already_exists') {
     return 'Bu para biriminde zaten bir cüzdanınız var.'
   }
 
-  if (error.problem.code === 'wallet.not_found') {
+  if (code === 'wallet.not_found') {
     return 'Cüzdan bulunamadı. Lütfen sayfayı yenileyin.'
   }
 
-  if (error.problem.code === 'wallet.transaction_reference_conflict') {
+  if (code === 'wallet.transaction_reference_conflict') {
     return 'Bu işlem referansı daha önce kullanılmış.'
+  }
+
+  if (code === 'wallet.balance_must_be_zero') {
+    return 'Cüzdanı kapatmadan önce bakiyeyi sıfırlamalısınız.'
+  }
+
+  if (code === 'wallet.insufficient_funds') {
+    return 'Bu işlem için cüzdan bakiyesi yetersiz.'
   }
 
   const validationMessage = Object.values(error.problem.errors ?? {}).flat()[0]

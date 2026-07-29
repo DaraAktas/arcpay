@@ -64,6 +64,16 @@ public sealed class WalletController(WalletService walletService) : ControllerBa
         return result.IsSuccess ? Ok(DepositResponse.From(result.Value)) : ToProblem(result.Error);
     }
 
+    [HttpDelete("{currency}")]
+    public async Task<IActionResult> Close(string currency, CancellationToken cancellationToken)
+    {
+        var ownerResult = GetOwner();
+        if (ownerResult.IsFailure) return Unauthorized();
+
+        var result = await walletService.CloseAsync(ownerResult.Value, currency, cancellationToken);
+        return result.IsSuccess ? NoContent() : ToProblem(result.Error);
+    }
+
     private Result<CustomerNumber> GetOwner() =>
         CustomerNumber.Create(User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value);
 

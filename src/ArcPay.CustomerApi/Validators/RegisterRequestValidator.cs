@@ -1,6 +1,7 @@
 using ArcPay.CustomerApi.Dtos;
 using FluentValidation;
 using System.Text;
+using ArcPay.CustomerApi.Services;
 
 namespace ArcPay.CustomerApi.Validators;
 
@@ -16,6 +17,12 @@ public sealed class RegisterRequestValidator : AbstractValidator<RegisterRequest
             .NotEmpty()
             .MaximumLength(320)
             .EmailAddress();
+
+        RuleFor(request => request.PhoneNumber)
+            .NotEmpty()
+            .MaximumLength(30)
+            .Must(value => PhoneNumberNormalizer.TryNormalize(value, out _))
+            .WithMessage("Enter a valid phone number including the country code.");
 
         RuleFor(request => request.Password)
             .NotEmpty()

@@ -9,6 +9,7 @@ import { getErrorMessage } from '../lib/form-errors'
 interface RegisterForm {
   fullName: string
   email: string
+  phoneNumber: string
   password: string
   confirmPassword: string
 }
@@ -16,6 +17,7 @@ interface RegisterForm {
 const emptyForm: RegisterForm = {
   fullName: '',
   email: '',
+  phoneNumber: '',
   password: '',
   confirmPassword: '',
 }
@@ -39,6 +41,7 @@ export function RegisterPage() {
     const errors: Partial<Record<keyof RegisterForm, string>> = {}
     if (!form.fullName.trim()) errors.fullName = 'Ad soyad gereklidir.'
     if (!/^\S+@\S+\.\S+$/.test(form.email)) errors.email = 'Geçerli bir e-posta adresi girin.'
+    if (!/^(\+|00)?[0-9\s()-]{10,20}$/.test(form.phoneNumber)) errors.phoneNumber = 'Geçerli bir telefon numarası girin.'
     if (form.password.length < 8) errors.password = 'Parola en az 8 karakter olmalıdır.'
     else if (!/[A-Z]/.test(form.password) || !/[a-z]/.test(form.password) || !/\d/.test(form.password)) {
       errors.password = 'Parola büyük harf, küçük harf ve rakam içermelidir.'
@@ -58,6 +61,7 @@ export function RegisterPage() {
       await customerApi.register({
         fullName: form.fullName,
         email: form.email,
+        phoneNumber: form.phoneNumber,
         password: form.password,
       })
       navigate('/giris', {
@@ -89,6 +93,18 @@ export function RegisterPage() {
           onChange={(event) => updateField('fullName', event.target.value)}
           error={fieldErrors.fullName}
           maxLength={150}
+          required
+        />
+        <FormField
+          label="Telefon numarası"
+          type="tel"
+          name="phoneNumber"
+          autoComplete="tel"
+          placeholder="+90 555 100 00 01"
+          value={form.phoneNumber}
+          onChange={(event) => updateField('phoneNumber', event.target.value)}
+          error={fieldErrors.phoneNumber}
+          maxLength={30}
           required
         />
         <FormField

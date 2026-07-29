@@ -20,6 +20,11 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const useDemoAccount = (demoEmail: string) => {
+    setEmail(demoEmail)
+    setPassword('Demo123!')
+    setError('')
+  }
 
   if (status === 'authenticated') return <Navigate to="/hesabim" replace />
 
@@ -51,6 +56,16 @@ export function LoginPage() {
       )}
 
       {error && <div className="notice notice-error" role="alert">{error}</div>}
+
+      <section className="demo-accounts" aria-label="Demo hesaplar">
+        <strong>Demo hesaplar</strong>
+        <p>Parola: <code>Demo123!</code></p>
+        <div className="demo-account-actions">
+          <button type="button" onClick={() => useDemoAccount('demo.sender@arcpay.test')}>Gönderen · 1.000 TRY</button>
+          <button type="button" onClick={() => useDemoAccount('demo.receiver@arcpay.test')}>Alıcı · 250 TRY</button>
+          <button type="button" onClick={() => useDemoAccount('demo.empty@arcpay.test')}>Boş · 0 TRY</button>
+        </div>
+      </section>
 
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         <FormField

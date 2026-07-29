@@ -130,6 +130,9 @@ describe('ArcPay authentication flow', () => {
     const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, options?: RequestInit) => {
       const url = input.toString()
       if (url.endsWith('/api/customer/me')) return Promise.resolve(jsonResponse(customer))
+      if (url.endsWith('/api/customer/resolve-recipient')) {
+        return Promise.resolve(jsonResponse({ customerNumber: 'ARC-1000000002', displayName: 'Grace Hopper' }))
+      }
       if (url.endsWith('/api/transaction')) return Promise.resolve(jsonResponse([]))
       if (url.endsWith('/api/wallet') && options?.method === 'GET') return Promise.resolve(jsonResponse([]))
       if (url.endsWith('/api/wallet') && options?.method === 'POST') return Promise.resolve(jsonResponse(wallet, 201))
@@ -196,6 +199,9 @@ describe('ArcPay authentication flow', () => {
       const url = input.toString()
       if (url.endsWith('/api/customer/me')) return Promise.resolve(jsonResponse(customer))
       if (url.endsWith('/api/wallet')) return Promise.resolve(jsonResponse([wallet]))
+      if (url.endsWith('/api/customer/resolve-recipient')) {
+        return Promise.resolve(jsonResponse({ customerNumber: 'ARC-1000000002', displayName: 'Grace Hopper' }))
+      }
       if (url.endsWith('/api/transaction/transfer') && options?.method === 'POST') {
         transferCompleted = true
         return Promise.resolve(jsonResponse(transfer, 201))
@@ -215,16 +221,73 @@ describe('ArcPay authentication flow', () => {
 
     expect(await screen.findByText('₺500,00')).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: 'Para gönder' }))
-    fireEvent.change(screen.getByLabelText('Alıcı müşteri numarası'), {
-      target: { value: 'ARC-1000000002' },
+    fireEvent.change(screen.getByLabelText('Alıcı bilgisi'), {
+      target: { value: 'grace@arcpay.test' },
     })
     fireEvent.change(screen.getByLabelText('Tutar'), { target: { value: '125' } })
     fireEvent.change(screen.getByLabelText(/Açıklama/), { target: { value: 'Yemek payı' } })
     fireEvent.click(screen.getByRole('button', { name: 'Transferi tamamla' }))
 
-    expect(await screen.findByText(/numaralı müşteriye/)).toHaveTextContent('₺125,00 gönderildi.')
+    expect(await screen.findByText(/Grace Hopper adlı alıcıya/)).toHaveTextContent('₺125,00 gönderildi.')
     expect(screen.getByText('Giden transfer')).toBeVisible()
     expect(screen.getByText('ARC-1000000002')).toBeVisible()
     expect(screen.getByText('-₺125,00')).toBeVisible()
+  })
+
+  it('shows an unknown recipient error inside the transfer dialog', async () => {
+    sessionStorage.setItem(
+      'arcpay.session',
+      JSON.stringify({ accessToken: 'stored.token', expiresAt: '2099-01-01T00:00:00Z', customer }),
+    )
+    const wallet = { id: 1, customerNumber: customer.customerNumber, balance: 500, currency: 'TRY' }
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url = input.toString()
+      if (url.endsWith('/api/customer/me')) return Promise.resolve(jsonResponse(customer))
+      if (url.endsWith('/api/wallet')) return Promise.resolve(jsonResponse([wallet]))
+      if (url.endsWith('/api/transaction')) return Promise.resolve(jsonResponse([]))
+      if (url.endsWith('/api/customer/resolve-recipient')) {
+        return Promise.resolve(jsonResponse({ title: 'Customer was not found.', code: 'Customer.NotFound' }, 404))
+      }
+      throw new Error(`Unexpected request: ${url}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<MemoryRouter initialEntries={['/hesabim']}><App /></MemoryRouter>)
+
+    expect(await screen.findByText('₺500,00')).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Para gönder' }))
+    fireEvent.change(screen.getByLabelText('Alıcı bilgisi'), { target: { value: 'yanlis@arcpay.test' } })
+    fireEvent.change(screen.getByLabelText('Tutar'), { target: { value: '10' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Transferi tamamla' }))
+
+    const dialog = screen.getByRole('dialog', { name: 'Para gönderin' })
+    expect(await screen.findByText(/eşleşen alıcı bulunamadı/)).toBeVisible()
+    expect(dialog).toContainElement(screen.getByRole('alert'))
+  })
+
+  it('closes a zero-balance wallet', async () => {
+    sessionStorage.setItem(
+      'arcpay.session',
+      JSON.stringify({ accessToken: 'stored.token', expiresAt: '2099-01-01T00:00:00Z', customer }),
+    )
+    const wallet = { id: 1, customerNumber: customer.customerNumber, balance: 0, currency: 'TRY' }
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, options?: RequestInit) => {
+      const url = input.toString()
+      if (url.endsWith('/api/customer/me')) return Promise.resolve(jsonResponse(customer))
+      if (url.endsWith('/api/wallet') && options?.method === 'GET') return Promise.resolve(jsonResponse([wallet]))
+      if (url.endsWith('/api/transaction')) return Promise.resolve(jsonResponse([]))
+      if (url.endsWith('/api/wallet/TRY') && options?.method === 'DELETE') return Promise.resolve(new Response(null, { status: 204 }))
+      throw new Error(`Unexpected request: ${url}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<MemoryRouter initialEntries={['/hesabim']}><App /></MemoryRouter>)
+
+    expect(await screen.findByText('₺0,00')).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Cüzdanı kapat' }))
+    fireEvent.click(screen.getByRole('dialog', { name: 'Cüzdanı kapatın' }).querySelector('.danger-button')!)
+
+    expect(await screen.findByText(/cüzdanınız kapatıldı/)).toBeVisible()
+    expect(screen.getByText('0 aktif cüzdan')).toBeVisible()
   })
 })

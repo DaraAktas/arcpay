@@ -13,6 +13,7 @@ builder.Services.AddDbContext<CustomerDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<CustomerService>();
+builder.Services.AddScoped<CustomerDevelopmentSeeder>();
 builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 builder.Services.AddScoped<FluentValidationActionFilter>();
@@ -33,6 +34,10 @@ app.UseExceptionHandler();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    await using var scope = app.Services.CreateAsyncScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<CustomerDbContext>();
+    await dbContext.Database.MigrateAsync();
+    await scope.ServiceProvider.GetRequiredService<CustomerDevelopmentSeeder>().SeedAsync();
     app.MapOpenApi();
 }
 

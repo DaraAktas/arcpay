@@ -21,9 +21,19 @@ public sealed class WalletService(IWalletRepository repository, IWalletUnitOfWor
         }
 
         var currency = currencyResult.Value;
-        if (await repository.GetAsync(owner, currency, cancellationToken) is not null)
+        var existingWallet = await repository.GetAnyAsync(owner, currency, cancellationToken);
+        if (existingWallet is not null && existingWallet.RecordStatus == "A")
         {
             return Result<WalletView>.Failure(WalletErrors.AlreadyExists);
+        }
+
+        if (existingWallet is not null)
+        {
+            existingWallet.Reopen();
+            var reopenResult = await unitOfWork.SaveChangesAsync(cancellationToken);
+            return reopenResult.IsSuccess
+                ? Result<WalletView>.Success(WalletView.From(existingWallet))
+                : Result<WalletView>.Failure(reopenResult.Error);
         }
 
         var wallet = Wallet.Open(owner, currency);
@@ -98,6 +108,32 @@ public sealed class WalletService(IWalletRepository repository, IWalletUnitOfWor
         await dbTransaction.CommitAsync(cancellationToken);
         return Result<DepositView>.Success(
             new DepositView(transactionReference, WalletView.From(wallet)));
+    }
+
+    public async Task<Result> CloseAsync(
+        CustomerNumber owner,
+        string currencyCode,
+        CancellationToken cancellationToken)
+    {
+        var currencyResult = Currency.Create(currencyCode);
+        if (currencyResult.IsFailure) return Result.Failure(currencyResult.Error);
+
+        await using var dbTransaction = await unitOfWork.BeginTransactionAsync(cancellationToken);
+        var wallet = await repository.GetForUpdateAsync(owner, currencyResult.Value, cancellationToken);
+        if (wallet is null) return Result.Failure(WalletErrors.NotFound);
+
+        var closeResult = wallet.Close();
+        if (closeResult.IsFailure) return closeResult;
+
+        var saveResult = await unitOfWork.SaveChangesAsync(cancellationToken);
+        if (saveResult.IsFailure)
+        {
+            await dbTransaction.RollbackAsync(cancellationToken);
+            return saveResult;
+        }
+
+        await dbTransaction.CommitAsync(cancellationToken);
+        return Result.Success();
     }
 
     private static bool IsSameDeposit(Transaction transaction, Wallet wallet, Money amount) =>

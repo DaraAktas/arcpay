@@ -24,7 +24,7 @@ public sealed class WalletRepository(WalletDbContext dbContext) :
         CancellationToken cancellationToken) =>
         await dbContext.Wallets
             .AsNoTracking()
-            .Where(wallet => wallet.CustomerNumber == owner)
+            .Where(wallet => wallet.CustomerNumber == owner && wallet.RecordStatus == "A")
             .OrderBy(wallet => wallet.Currency)
             .ToListAsync(cancellationToken);
 
@@ -35,8 +35,16 @@ public sealed class WalletRepository(WalletDbContext dbContext) :
         dbContext.Wallets
             .AsNoTracking()
             .SingleOrDefaultAsync(
-                wallet => wallet.CustomerNumber == owner && wallet.Currency == currency,
+                wallet => wallet.CustomerNumber == owner && wallet.Currency == currency && wallet.RecordStatus == "A",
                 cancellationToken);
+
+    public Task<Wallet?> GetAnyAsync(
+        CustomerNumber owner,
+        Currency currency,
+        CancellationToken cancellationToken) =>
+        dbContext.Wallets.SingleOrDefaultAsync(
+            wallet => wallet.CustomerNumber == owner && wallet.Currency == currency,
+            cancellationToken);
 
     public Task<Wallet?> GetForUpdateAsync(
         CustomerNumber owner,
@@ -45,7 +53,7 @@ public sealed class WalletRepository(WalletDbContext dbContext) :
         dbContext.Wallets
             .FromSqlInterpolated($"""
                 SELECT * FROM "Wallets"
-                WHERE "CustomerNumber" = {owner.Value} AND "Currency" = {currency.Code}
+                WHERE "CustomerNumber" = {owner.Value} AND "Currency" = {currency.Code} AND "RecordStatus" = 'A'
                 FOR UPDATE
                 """)
             .SingleOrDefaultAsync(cancellationToken);
@@ -60,7 +68,7 @@ public sealed class WalletRepository(WalletDbContext dbContext) :
         var wallets = await dbContext.Wallets
             .FromSqlInterpolated($"""
                 SELECT * FROM "Wallets"
-                WHERE "Id" IN ({firstId}, {secondId})
+                WHERE "Id" IN ({firstId}, {secondId}) AND "RecordStatus" = 'A'
                 ORDER BY "Id"
                 FOR UPDATE
                 """)

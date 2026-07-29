@@ -2,11 +2,13 @@ export interface Customer {
   customerNumber: string
   fullName: string
   email: string
+  phoneNumber?: string | null
 }
 
 export interface RegisterRequest {
   fullName: string
   email: string
+  phoneNumber: string
   password: string
 }
 
@@ -20,6 +22,11 @@ export interface AuthResponse {
   tokenType: string
   expiresAt: string
   customer: Customer
+}
+
+export interface RecipientLookup {
+  customerNumber: string
+  displayName: string
 }
 
 export interface Wallet {

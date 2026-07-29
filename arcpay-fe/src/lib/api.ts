@@ -8,6 +8,7 @@ import type {
   DepositResponse,
   TransactionHistory,
   TransferResponse,
+  RecipientLookup,
 } from '../types/api'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000').replace(
@@ -60,6 +61,7 @@ async function request<T>(
     throw new ApiError(response.status, problem)
   }
 
+  if (response.status === 204) return undefined as T
   return (await response.json()) as T
 }
 
@@ -78,6 +80,13 @@ export const customerApi = {
 
   me: (accessToken: string) =>
     request<Customer>('/api/customer/me', { method: 'GET' }, accessToken),
+
+  resolveRecipient: (identifier: string, accessToken: string) =>
+    request<RecipientLookup>(
+      '/api/customer/resolve-recipient',
+      { method: 'POST', body: JSON.stringify({ identifier }) },
+      accessToken,
+    ),
 }
 
 export const walletApi = {
@@ -95,6 +104,13 @@ export const walletApi = {
     request<DepositResponse>(
       `/api/wallet/${encodeURIComponent(currency)}/deposit`,
       { method: 'POST', body: JSON.stringify({ amount, transactionRef }) },
+      accessToken,
+    ),
+
+  close: (currency: string, accessToken: string) =>
+    request<void>(
+      `/api/wallet/${encodeURIComponent(currency)}`,
+      { method: 'DELETE' },
       accessToken,
     ),
 }

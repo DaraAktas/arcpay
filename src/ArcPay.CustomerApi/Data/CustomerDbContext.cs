@@ -26,6 +26,11 @@ public class CustomerDbContext : DbContext
             entity.Property(customer => customer.Email).HasMaxLength(320);
             entity.Property(customer => customer.NormalizedEmail).HasMaxLength(320);
             entity.HasIndex(customer => customer.NormalizedEmail).IsUnique();
+            entity.Property(customer => customer.PhoneNumber).HasMaxLength(20);
+            entity.Property(customer => customer.NormalizedPhoneNumber).HasMaxLength(20);
+            entity.HasIndex(customer => customer.NormalizedPhoneNumber)
+                .IsUnique()
+                .HasFilter("\"NormalizedPhoneNumber\" IS NOT NULL");
             entity.Property(customer => customer.PasswordHash).HasMaxLength(100);
         });
     }

@@ -23,6 +23,7 @@ builder.Services.AddScoped<IWalletUnitOfWork>(provider => provider.GetRequiredSe
 builder.Services.AddScoped<ITransactionHistoryReader>(provider => provider.GetRequiredService<WalletRepository>());
 builder.Services.AddScoped<WalletService>();
 builder.Services.AddScoped<TransferService>();
+builder.Services.AddScoped<WalletDevelopmentSeeder>();
 builder.Services.AddArcPayJwtAuthentication(builder.Configuration);
 builder.Services.AddArcPayProblemDetails();
 
@@ -37,6 +38,10 @@ app.UseExceptionHandler();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    await using var scope = app.Services.CreateAsyncScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<WalletDbContext>();
+    await dbContext.Database.MigrateAsync();
+    await scope.ServiceProvider.GetRequiredService<WalletDevelopmentSeeder>().SeedAsync();
     app.MapOpenApi();
 }
 

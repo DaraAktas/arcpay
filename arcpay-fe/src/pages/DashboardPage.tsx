@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/auth-context'
 import { Brand } from '../components/Brand'
-import { ApiError, transactionApi, walletApi } from '../lib/api'
+import { ApiError, customerApi, transactionApi, walletApi } from '../lib/api'
 import { getErrorMessage } from '../lib/form-errors'
 import type { TransactionHistory, Wallet } from '../types/api'
 
@@ -51,11 +51,16 @@ export function DashboardPage() {
   const [depositAmount, setDepositAmount] = useState('')
   const [isDepositing, setIsDepositing] = useState(false)
   const [transferWallet, setTransferWallet] = useState<Wallet | null>(null)
-  const [receiverCustomerNumber, setReceiverCustomerNumber] = useState('')
+  const [receiverIdentifier, setReceiverIdentifier] = useState('')
   const [transferAmount, setTransferAmount] = useState('')
   const [transferDescription, setTransferDescription] = useState('')
   const [isTransferring, setIsTransferring] = useState(false)
-  const [error, setError] = useState('')
+  const [pageError, setPageError] = useState('')
+  const [depositError, setDepositError] = useState('')
+  const [transferError, setTransferError] = useState('')
+  const [closeWallet, setCloseWallet] = useState<Wallet | null>(null)
+  const [closeError, setCloseError] = useState('')
+  const [isClosing, setIsClosing] = useState(false)
   const [notice, setNotice] = useState('')
 
   useEffect(() => {
@@ -77,7 +82,7 @@ export function DashboardPage() {
           logout()
           return
         }
-        if (active) setError(getErrorMessage(caught))
+        if (active) setPageError(getErrorMessage(caught))
       } finally {
         if (active) setIsLoading(false)
       }
@@ -105,7 +110,7 @@ export function DashboardPage() {
   }
 
   const handleOpenWallet = async () => {
-    setError('')
+    setPageError('')
     setNotice('')
     setIsOpening(true)
     try {
@@ -113,7 +118,7 @@ export function DashboardPage() {
       setWallets((current) => [...current, wallet].sort((a, b) => a.currency.localeCompare(b.currency)))
       setNotice(`${wallet.currency} cüzdanınız açıldı.`)
     } catch (caught) {
-      setError(getErrorMessage(caught))
+      setPageError(getErrorMessage(caught))
     } finally {
       setIsOpening(false)
     }
@@ -125,11 +130,11 @@ export function DashboardPage() {
 
     const amount = parseAmount(depositAmount)
     if (!Number.isFinite(amount) || amount <= 0) {
-      setError('Yatırılacak tutar sıfırdan büyük olmalıdır.')
+      setDepositError('Yatırılacak tutar sıfırdan büyük olmalıdır.')
       return
     }
 
-    setError('')
+    setDepositError('')
     setNotice('')
     setIsDepositing(true)
     try {
@@ -147,7 +152,7 @@ export function DashboardPage() {
       setDepositWallet(null)
       setDepositAmount('')
     } catch (caught) {
-      setError(getErrorMessage(caught))
+      setDepositError(getErrorMessage(caught))
     } finally {
       setIsDepositing(false)
     }
@@ -159,16 +164,17 @@ export function DashboardPage() {
 
     const amount = parseAmount(transferAmount)
     if (!Number.isFinite(amount) || amount <= 0) {
-      setError('Gönderilecek tutar sıfırdan büyük olmalıdır.')
+      setTransferError('Gönderilecek tutar sıfırdan büyük olmalıdır.')
       return
     }
 
-    setError('')
+    setTransferError('')
     setNotice('')
     setIsTransferring(true)
     try {
+      const recipient = await customerApi.resolveRecipient(receiverIdentifier.trim(), session.accessToken)
       const result = await transactionApi.transfer(
-        receiverCustomerNumber.trim().toUpperCase(),
+        recipient.customerNumber,
         amount,
         transferWallet.currency,
         crypto.randomUUID(),
@@ -179,15 +185,31 @@ export function DashboardPage() {
         current.map((wallet) => (wallet.id === result.senderWallet.id ? result.senderWallet : wallet)),
       )
       await refreshTransactions()
-      setNotice(`${result.receiverCustomerNumber} numaralı müşteriye ${formatMoney(result.amount, result.currency)} gönderildi.`)
+      setNotice(`${recipient.displayName} adlı alıcıya ${formatMoney(result.amount, result.currency)} gönderildi.`)
       setTransferWallet(null)
-      setReceiverCustomerNumber('')
+      setReceiverIdentifier('')
       setTransferAmount('')
       setTransferDescription('')
     } catch (caught) {
-      setError(getErrorMessage(caught))
+      setTransferError(getErrorMessage(caught))
     } finally {
       setIsTransferring(false)
+    }
+  }
+
+  const handleCloseWallet = async () => {
+    if (!closeWallet) return
+    setCloseError('')
+    setIsClosing(true)
+    try {
+      await walletApi.close(closeWallet.currency, session.accessToken)
+      setWallets((current) => current.filter((wallet) => wallet.id !== closeWallet.id))
+      setNotice(`${closeWallet.currency} cüzdanınız kapatıldı. İşlem geçmişiniz korunuyor.`)
+      setCloseWallet(null)
+    } catch (caught) {
+      setCloseError(getErrorMessage(caught))
+    } finally {
+      setIsClosing(false)
     }
   }
 
@@ -211,10 +233,10 @@ export function DashboardPage() {
           <div className="phase-badge"><span>✓</span> Faz 4 · ACID transfer</div>
         </section>
 
-        {(error || notice) && (
-          <div className={`dashboard-notice ${error ? 'is-error' : ''}`} role={error ? 'alert' : 'status'}>
-            {error || notice}
-            <button type="button" aria-label="Bildirimi kapat" onClick={() => { setError(''); setNotice('') }}>×</button>
+        {(pageError || notice) && (
+          <div className={`dashboard-notice ${pageError ? 'is-error' : ''}`} role={pageError ? 'alert' : 'status'}>
+            {pageError || notice}
+            <button type="button" aria-label="Bildirimi kapat" onClick={() => { setPageError(''); setNotice('') }}>×</button>
           </div>
         )}
 
@@ -246,11 +268,14 @@ export function DashboardPage() {
                     <strong>{formatMoney(wallet.balance, wallet.currency)}</strong>
                   </div>
                   <div className="wallet-actions">
-                    <button type="button" onClick={() => { setDepositWallet(wallet); setError(''); setNotice('') }}>
+                    <button type="button" onClick={() => { setDepositWallet(wallet); setDepositError(''); setNotice('') }}>
                       Para yatır <span aria-hidden="true">＋</span>
                     </button>
-                    <button type="button" onClick={() => { setTransferWallet(wallet); setError(''); setNotice('') }}>
+                    <button type="button" onClick={() => { setTransferWallet(wallet); setTransferError(''); setNotice('') }}>
                       Para gönder <span aria-hidden="true">→</span>
+                    </button>
+                    <button className="wallet-close-button" type="button" onClick={() => { setCloseWallet(wallet); setCloseError(''); setNotice('') }}>
+                      Cüzdanı kapat
                     </button>
                   </div>
                 </article>
@@ -338,6 +363,7 @@ export function DashboardPage() {
             <p className="eyebrow">{depositWallet.currency} cüzdanı</p>
             <h2 id="deposit-title">Para yatırın</h2>
             <p>Bakiyeniz işlem kaydıyla birlikte atomik olarak güncellenecek.</p>
+            {depositError && <div className="modal-notice" role="alert">{depositError}</div>}
             <form onSubmit={handleDeposit}>
               <label htmlFor="deposit-amount">Tutar</label>
               <div className="amount-input">
@@ -355,14 +381,16 @@ export function DashboardPage() {
       {transferWallet && (
         <div className="modal-backdrop" role="presentation">
           <section className="money-modal" role="dialog" aria-modal="true" aria-labelledby="transfer-title">
-            <button className="modal-close" type="button" aria-label="Para gönderme penceresini kapat" onClick={() => { setTransferWallet(null); setReceiverCustomerNumber(''); setTransferAmount(''); setTransferDescription('') }}>×</button>
+            <button className="modal-close" type="button" aria-label="Para gönderme penceresini kapat" onClick={() => { setTransferWallet(null); setReceiverIdentifier(''); setTransferAmount(''); setTransferDescription(''); setTransferError('') }}>×</button>
             <span className="currency-symbol">→</span>
             <p className="eyebrow">{transferWallet.currency} cüzdanı</p>
             <h2 id="transfer-title">Para gönderin</h2>
             <p>İki bakiye tek ACID işleminde güncellenir; tekrar eden istekler ikinci kez işlenmez.</p>
             <form onSubmit={handleTransfer}>
-              <label htmlFor="receiver-number">Alıcı müşteri numarası</label>
-              <input className="modal-input" id="receiver-number" value={receiverCustomerNumber} onChange={(event) => setReceiverCustomerNumber(event.target.value)} placeholder="ARC-1000000002" pattern="ARC-[0-9]{10}" required />
+              <label htmlFor="receiver-number">Alıcı bilgisi</label>
+              <input className="modal-input" id="receiver-number" value={receiverIdentifier} onChange={(event) => { setReceiverIdentifier(event.target.value); setTransferError('') }} placeholder="ArcPay no, e-posta veya telefon" required />
+              <span className="input-hint">ArcPay numarası, e-posta adresi veya telefon numarası girebilirsiniz.</span>
+              {transferError && <div className="modal-notice" role="alert">{transferError}</div>}
               <label htmlFor="transfer-amount">Tutar</label>
               <div className="amount-input">
                 <input id="transfer-amount" type="text" inputMode="decimal" autoComplete="off" placeholder="0,00" value={transferAmount} onChange={(event) => setTransferAmount(event.target.value)} required />
@@ -374,6 +402,27 @@ export function DashboardPage() {
                 {isTransferring ? 'Gönderiliyor…' : 'Transferi tamamla'}
               </button>
             </form>
+          </section>
+        </div>
+      )}
+
+      {closeWallet && (
+        <div className="modal-backdrop" role="presentation">
+          <section className="money-modal" role="dialog" aria-modal="true" aria-labelledby="close-wallet-title">
+            <button className="modal-close" type="button" aria-label="Cüzdan kapatma penceresini kapat" onClick={() => { setCloseWallet(null); setCloseError('') }}>×</button>
+            <span className="currency-symbol">×</span>
+            <p className="eyebrow">{closeWallet.currency} cüzdanı</p>
+            <h2 id="close-wallet-title">Cüzdanı kapatın</h2>
+            <p>Cüzdan kaydı silinmez; pasife alınır ve işlem geçmişiniz korunur.</p>
+            <div className="close-wallet-balance">
+              <span>Mevcut bakiye</span>
+              <strong>{formatMoney(closeWallet.balance, closeWallet.currency)}</strong>
+            </div>
+            {closeWallet.balance !== 0 && <div className="modal-notice" role="alert">Cüzdanı kapatmak için bakiyeyi önce sıfırlamalısınız.</div>}
+            {closeError && <div className="modal-notice" role="alert">{closeError}</div>}
+            <button className="danger-button" type="button" onClick={handleCloseWallet} disabled={isClosing || closeWallet.balance !== 0}>
+              {isClosing ? 'Kapatılıyor…' : 'Cüzdanı kapat'}
+            </button>
           </section>
         </div>
       )}

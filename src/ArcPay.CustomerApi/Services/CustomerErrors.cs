@@ -9,6 +9,16 @@ internal static class CustomerErrors
         "A customer with this email address already exists.",
         StatusCodes.Status409Conflict);
 
+    public static readonly Error DuplicatePhone = new(
+        "Customer.DuplicatePhone",
+        "A customer with this phone number already exists.",
+        StatusCodes.Status409Conflict);
+
+    public static readonly Error InvalidPhone = new(
+        "Customer.InvalidPhone",
+        "Phone number format is invalid.",
+        StatusCodes.Status400BadRequest);
+
     public static readonly Error InvalidCredentials = new(
         "Customer.InvalidCredentials",
         "Email or password is incorrect.",

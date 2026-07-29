@@ -27,6 +27,24 @@ public sealed class Wallet : BaseEntity
 
     public static Wallet Open(CustomerNumber owner, Currency currency) => new(owner, currency);
 
+    public Result Close()
+    {
+        if (RecordStatus != "A") return Result.Failure(WalletErrors.AlreadyClosed);
+        if (_balanceAmount != 0) return Result.Failure(WalletErrors.BalanceMustBeZero);
+
+        RecordStatus = "I";
+        UpdatedAt = DateTime.UtcNow;
+        UpdatedBy = CustomerNumber.Value;
+        return Result.Success();
+    }
+
+    public void Reopen()
+    {
+        RecordStatus = "A";
+        UpdatedAt = DateTime.UtcNow;
+        UpdatedBy = CustomerNumber.Value;
+    }
+
     public Result Credit(Money amount, Guid transactionReference)
     {
         var validation = ValidateMutation(amount, transactionReference);
@@ -62,6 +80,7 @@ public sealed class Wallet : BaseEntity
 
     private Result ValidateMutation(Money amount, Guid transactionReference)
     {
+        if (RecordStatus != "A") return Result.Failure(WalletErrors.NotFound);
         if (amount.Currency != Currency)
         {
             return Result.Failure(WalletErrors.CurrencyMismatch);

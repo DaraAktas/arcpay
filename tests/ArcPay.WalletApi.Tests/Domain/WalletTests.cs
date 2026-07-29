@@ -81,4 +81,30 @@ public sealed class WalletTests
         Assert.True(result.IsSuccess);
         Assert.Equal(64.75m, wallet.Balance.Amount);
     }
+
+    [Fact]
+    public void Close_RejectsWalletWithBalance()
+    {
+        var wallet = Wallet.Open(Owner, Lira);
+        wallet.Credit(Money.Create(1m, Lira).Value, Guid.NewGuid());
+
+        var result = wallet.Close();
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(WalletErrors.BalanceMustBeZero, result.Error);
+        Assert.Equal("A", wallet.RecordStatus);
+    }
+
+    [Fact]
+    public void Close_AndReopen_ChangeLifecycleWithoutDeletingWallet()
+    {
+        var wallet = Wallet.Open(Owner, Lira);
+
+        var result = wallet.Close();
+        wallet.Reopen();
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("A", wallet.RecordStatus);
+        Assert.Equal(0m, wallet.Balance.Amount);
+    }
 }
