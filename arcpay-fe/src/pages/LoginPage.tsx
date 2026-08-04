@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 import { AuthLayout } from '../components/AuthLayout'
 import { FormField } from '../components/FormField'
 import { useAuth } from '../auth/auth-context'
@@ -20,7 +20,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const useDemoAccount = (demoEmail: string) => {
+  const selectDemoAccount = (demoEmail: string) => {
     setEmail(demoEmail)
     setPassword('Demo123!')
     setError('')
@@ -61,9 +61,9 @@ export function LoginPage() {
         <strong>Demo hesaplar</strong>
         <p>Parola: <code>Demo123!</code></p>
         <div className="demo-account-actions">
-          <button type="button" onClick={() => useDemoAccount('demo.sender@arcpay.test')}>Gönderen · 1.000 TRY</button>
-          <button type="button" onClick={() => useDemoAccount('demo.receiver@arcpay.test')}>Alıcı · 250 TRY</button>
-          <button type="button" onClick={() => useDemoAccount('demo.empty@arcpay.test')}>Boş · 0 TRY</button>
+          <button type="button" onClick={() => selectDemoAccount('demo.sender@arcpay.test')}>Gönderen · 1.000 TRY</button>
+          <button type="button" onClick={() => selectDemoAccount('demo.receiver@arcpay.test')}>Alıcı · 250 TRY</button>
+          <button type="button" onClick={() => selectDemoAccount('demo.empty@arcpay.test')}>Boş · 0 TRY</button>
         </div>
       </section>
 

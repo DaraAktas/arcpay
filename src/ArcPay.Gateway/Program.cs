@@ -1,7 +1,9 @@
 using ArcPay.Shared.Errors;
+using ArcPay.Shared.Observability;
 using ArcPay.Shared.Security;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddArcPayObservability();
 
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
@@ -18,6 +20,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseArcPayObservability();
 app.UseExceptionHandler();
 app.UseCors("AllowReactApp");
 app.UseAuthentication();

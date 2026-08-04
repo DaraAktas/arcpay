@@ -1,4 +1,5 @@
 using ArcPay.Shared.Errors;
+using ArcPay.Shared.Observability;
 using ArcPay.Shared.Security;
 using ArcPay.Shared.Validation;
 using ArcPay.WalletApi.Api.Validators;
@@ -11,6 +12,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddArcPayObservability();
 
 builder.Services.AddDbContext<WalletDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -34,6 +36,7 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+app.UseArcPayObservability();
 app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.
@@ -55,6 +58,6 @@ app.MapGet("/api/wallet/health", () => Results.Ok(new
 {
     service = "ArcPay.WalletApi",
     status = "Healthy"
-})).RequireAuthorization();
+}));
 
 app.Run();

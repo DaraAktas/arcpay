@@ -2,12 +2,14 @@ using ArcPay.CustomerApi.Data;
 using ArcPay.CustomerApi.Services;
 using ArcPay.CustomerApi.Validators;
 using ArcPay.Shared.Errors;
+using ArcPay.Shared.Observability;
 using ArcPay.Shared.Security;
 using ArcPay.Shared.Validation;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddArcPayObservability();
 
 builder.Services.AddDbContext<CustomerDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -29,6 +31,7 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+app.UseArcPayObservability();
 app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.

@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { useAuth } from '../auth/auth-context'
 import { Brand } from '../components/Brand'
 import { ApiError, investmentApi } from '../lib/api'
@@ -87,7 +87,7 @@ export function InvestmentPage() {
             <h1>Yatırım rotanızı oluşturun.</h1>
             <p>Fiyatları 60 saniyelik cache üzerinden izleyin; cüzdan bakiyenizle güvenli alım yapın.</p>
           </div>
-          <div className="phase-badge"><span>✓</span> Faz 5 · Saga + telafi</div>
+          <div className="phase-badge"><span>✓</span> Faz 6 · Gözlemlenebilir sistem</div>
         </section>
 
         {(pageError || notice) && (

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { useAuth } from '../auth/auth-context'
 import { Brand } from '../components/Brand'
 import { ApiError, customerApi, transactionApi, walletApi } from '../lib/api'
@@ -235,7 +235,7 @@ export function DashboardPage() {
             <h1>Merhaba, {customer.fullName.split(' ')[0]}.</h1>
             <p>Bakiyelerinizi yönetin, güvenli para gönderin ve tüm hareketlerinizi izleyin.</p>
           </div>
-          <div className="phase-badge"><span>✓</span> Faz 5 · Investment saga</div>
+          <div className="phase-badge"><span>✓</span> Faz 6 · Tek komutlu dağıtım</div>
         </section>
 
         {(pageError || notice) && (

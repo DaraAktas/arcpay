@@ -1,10 +1,18 @@
+name: arcpay
+
+x-api-environment: &api-environment
+  ASPNETCORE_ENVIRONMENT: Development
+  ASPNETCORE_HTTP_PORTS: 8080
+  Jwt__Issuer: ArcPay.CustomerApi
+  Jwt__Audience: ArcPay
+  Jwt__Key: ${ARCPAY_JWT_KEY:-ArcPay-Development-Jwt-Key-Change-Me-2026!}
+
 services:
   customer-db:
     image: postgres:18-alpine
-    container_name: arcpay-customer-db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Password123!
+      POSTGRES_PASSWORD: ${ARCPAY_DB_PASSWORD:-Password123!}
       POSTGRES_DB: ArcPay_CustomerDb
     ports:
       - "5434:5432"
@@ -18,10 +26,9 @@ services:
 
   wallet-db:
     image: postgres:18-alpine
-    container_name: arcpay-wallet-db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Password123!
+      POSTGRES_PASSWORD: ${ARCPAY_DB_PASSWORD:-Password123!}
       POSTGRES_DB: ArcPay_WalletDb
     ports:
       - "5435:5432"
@@ -35,10 +42,9 @@ services:
 
   investment-db:
     image: postgres:18-alpine
-    container_name: arcpay-investment-db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Password123!
+      POSTGRES_PASSWORD: ${ARCPAY_DB_PASSWORD:-Password123!}
       POSTGRES_DB: ArcPay_InvestmentDb
     ports:
       - "5436:5432"
@@ -49,6 +55,105 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  customer-api:
+    build:
+      context: .
+      dockerfile: src/ArcPay.CustomerApi/Dockerfile
+    environment:
+      <<: *api-environment
+      ConnectionStrings__DefaultConnection: Host=customer-db;Port=5432;Database=ArcPay_CustomerDb;Username=postgres;Password=${ARCPAY_DB_PASSWORD:-Password123!}
+    depends_on:
+      customer-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/api/customer/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  wallet-api:
+    build:
+      context: .
+      dockerfile: src/ArcPay.WalletApi/Dockerfile
+    environment:
+      <<: *api-environment
+      ConnectionStrings__DefaultConnection: Host=wallet-db;Port=5432;Database=ArcPay_WalletDb;Username=postgres;Password=${ARCPAY_DB_PASSWORD:-Password123!}
+    depends_on:
+      wallet-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/api/wallet/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  investment-api:
+    build:
+      context: .
+      dockerfile: src/ArcPay.InvestmentApi/Dockerfile
+    environment:
+      <<: *api-environment
+      ConnectionStrings__DefaultConnection: Host=investment-db;Port=5432;Database=ArcPay_InvestmentDb;Username=postgres;Password=${ARCPAY_DB_PASSWORD:-Password123!}
+      WalletApi__BaseUrl: http://wallet-api:8080/
+      MarketData__Provider: Development
+      MarketData__ApiKey: ${ALPHA_VANTAGE_API_KEY:-}
+    depends_on:
+      investment-db:
+        condition: service_healthy
+      wallet-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/api/investment/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  gateway:
+    build:
+      context: .
+      dockerfile: src/ArcPay.Gateway/Dockerfile
+    environment:
+      <<: *api-environment
+      ReverseProxy__Clusters__customer-cluster__Destinations__destination1__Address: http://customer-api:8080
+      ReverseProxy__Clusters__wallet-cluster__Destinations__destination1__Address: http://wallet-api:8080
+      ReverseProxy__Clusters__investment-cluster__Destinations__destination1__Address: http://investment-api:8080
+    depends_on:
+      customer-api:
+        condition: service_healthy
+      wallet-api:
+        condition: service_healthy
+      investment-api:
+        condition: service_healthy
+    ports:
+      - "5050:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: arcpay-fe/Dockerfile
+      args:
+        VITE_API_BASE_URL: /
+    depends_on:
+      gateway:
+        condition: service_healthy
+    ports:
+      - "5173:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
 
 volumes:
   customer_pgdata:

@@ -3,12 +3,14 @@ using ArcPay.InvestmentApi.Application;
 using ArcPay.InvestmentApi.Application.Abstractions;
 using ArcPay.InvestmentApi.Infrastructure;
 using ArcPay.Shared.Errors;
+using ArcPay.Shared.Observability;
 using ArcPay.Shared.Security;
 using ArcPay.Shared.Validation;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddArcPayObservability();
 
 builder.Services.AddDbContext<InvestmentDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -38,6 +40,7 @@ builder.Services.AddArcPayProblemDetails();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+app.UseArcPayObservability();
 app.UseExceptionHandler();
 if (app.Environment.IsDevelopment())
 {
@@ -48,8 +51,7 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.MapGet("/api/investment/health", () => Results.Ok(new { service = "ArcPay.InvestmentApi", status = "Healthy" }))
-    .RequireAuthorization();
+app.MapGet("/api/investment/health", () => Results.Ok(new { service = "ArcPay.InvestmentApi", status = "Healthy" }));
 app.Run();
 
 public partial class Program;
